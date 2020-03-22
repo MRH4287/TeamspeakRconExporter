@@ -28,8 +28,13 @@ namespace TeamspeakRconExporter.Collectors
 
         public async Task Collect()
         {
-            var allClients = await _connection.GetClients().ConfigureAwait(false);
-            var channels = await _connection.GetChannels().ConfigureAwait(false);
+            if (_connection.Client == null)
+            {
+                return;
+            }
+
+            var allClients = await _connection.Client.GetClients().ConfigureAwait(false);
+            var channels = await _connection.Client.GetChannels().ConfigureAwait(false);
             var clients = allClients.Where(c => c.Type == TeamSpeak3QueryApi.Net.Specialized.ClientType.FullClient).ToList();
             var channelMap = channels.ToDictionary(k => k.Id);
 

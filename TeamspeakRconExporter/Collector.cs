@@ -16,6 +16,9 @@ namespace TeamspeakRconExporter
         private readonly ILogger<Collector> _logger;
         private CancellationTokenSource _tokenSource = new CancellationTokenSource();
         private Task _collectorTask;
+        private DateTime _connectionTime;
+
+        private TimeSpan _reconnectAfter = TimeSpan.FromMinutes(5);
 
         public Collector(Connection connection, IEnumerable<ICollector> collectors, ILogger<Collector> logger)
         {
@@ -40,6 +43,12 @@ namespace TeamspeakRconExporter
                     }
                 }
 
+                if ((DateTime.Now - _connectionTime) > _reconnectAfter)
+                {
+                    await _connection.Reconnect().ConfigureAwait(false);
+                    _connectionTime = DateTime.Now;
+                }
+
                 await Task.Delay(5000, _tokenSource.Token).ConfigureAwait(false);
             }
         }
@@ -47,10 +56,11 @@ namespace TeamspeakRconExporter
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             await _connection.Connect().ConfigureAwait(false);
-            await _connection.Login().ConfigureAwait(false);
-            await _connection.UseServer().ConfigureAwait(false);
+            _connectionTime = DateTime.Now;
             _collectorTask = Task.Run(Collect, _tokenSource.Token);
         }
+
+
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
@@ -60,7 +70,7 @@ namespace TeamspeakRconExporter
                 await _collectorTask.ConfigureAwait(false);
             }
 
-            await _connection.Logout().ConfigureAwait(false);
+            await _connection.Disconnect().ConfigureAwait(false);
             _connection.Dispose();
         }
 
