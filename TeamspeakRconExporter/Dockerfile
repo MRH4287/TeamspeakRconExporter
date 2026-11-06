@@ -3,16 +3,15 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 USER app
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
+EXPOSE 5000
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["TeamspeakRconExporter2/TeamspeakRconExporter2.csproj", "TeamspeakRconExporter2/"]
-RUN dotnet restore "./TeamspeakRconExporter2/./TeamspeakRconExporter2.csproj"
+COPY ["TeamspeakRconExporter/TeamspeakRconExporter2.csproj", "TeamspeakRconExporter/"]
+RUN dotnet restore "./TeamspeakRconExporter/TeamspeakRconExporter2.csproj"
 COPY . .
-WORKDIR "/src/TeamspeakRconExporter2"
+WORKDIR "/src/TeamspeakRconExporter"
 RUN dotnet build "./TeamspeakRconExporter2.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish

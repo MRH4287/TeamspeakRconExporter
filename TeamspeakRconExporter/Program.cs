@@ -6,6 +6,8 @@ using TeamspeakRconExporter.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.UseUrls("http://0.0.0.0:5000");
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddMetricFactory();
@@ -35,14 +37,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
 app.UsePrometheusServer();
 app.UseRouting();
 
-app.UseAuthorization();
-
-app.MapRazorPages();
 
 app.Run();
