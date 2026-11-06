@@ -60,8 +60,6 @@ namespace TeamspeakRconExporter
             _collectorTask = Task.Run(Collect, _tokenSource.Token);
         }
 
-
-
         public async Task StopAsync(CancellationToken cancellationToken)
         {
             _tokenSource.Cancel();

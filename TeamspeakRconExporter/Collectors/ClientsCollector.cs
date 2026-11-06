@@ -1,42 +1,30 @@
-﻿using Prometheus;
-using Prometheus.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Prometheus.Client;
 
 namespace TeamspeakRconExporter.Collectors
 {
-    public class ClientsCollector : ICollector
+    public class ClientsCollector(Connection connection, IMetricFactory metricFactory) : ICollector
     {
         #region Metrics
 
-        private readonly Gauge _clientCount = Metrics.CreateGauge(Consts.GetMetricName("clientCount"), "The number of Clients currently on the Server");
-        private readonly Gauge _clients = Metrics.CreateGauge(Consts.GetMetricName("clients"), "The currently connected Clients", "NickName", "ChannelName");
+
+        private readonly IGauge _clientCount = metricFactory.CreateGauge(Consts.GetMetricName("clientCount"), "The number of Clients currently on the Server");
+        private readonly IMetricFamily<IGauge> _clients = metricFactory.CreateGauge(Consts.GetMetricName("clients"), "The currently connected Clients", "NickName", "ChannelName");
 
         #endregion
-
-        private readonly Connection _connection;
         private List<(string, string)> _lastSeenClients = new List<(string, string)>();
-
-
-        public ClientsCollector(Connection connection)
-        {
-            _connection = connection;
-        }
 
         public async Task Collect()
         {
-            if (_connection.Client == null)
+            if (connection.Client == null)
             {
                 return;
             }
 
-            var allClients = await _connection.Client.GetClients().ConfigureAwait(false);
-            var channels = await _connection.Client.GetChannels().ConfigureAwait(false);
+            var allClients = await connection.Client.GetClients().ConfigureAwait(false);
+            var channels = await connection.Client.GetChannels().ConfigureAwait(false);
             var clients = allClients.Where(c => c.Type == TeamSpeak3QueryApi.Net.Specialized.ClientType.FullClient).ToList();
             var channelMap = channels.ToDictionary(k => k.Id);
+
 
             _clientCount.Set(clients.Count);
 

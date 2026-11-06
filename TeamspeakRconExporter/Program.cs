@@ -1,20 +1,48 @@
-﻿using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using System;
+using Prometheus.Client.AspNetCore;
+using Prometheus.Client.DependencyInjection;
+using TeamspeakRconExporter;
+using TeamspeakRconExporter.Collectors;
+using TeamspeakRconExporter.Models;
 
-namespace TeamspeakRconExporter
+var builder = WebApplication.CreateBuilder(args);
+
+// Add services to the container.
+builder.Services.AddRazorPages();
+builder.Services.AddMetricFactory();
+
+builder.Services.AddSingleton(provider =>
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+    var config = provider.GetRequiredService<IConfiguration>();
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-                .UseUrls("http://0.0.0.0:5000")
-                .UseEnvironment("Development");
-    }
+    return config.Get<Config>()!;
+});
+
+
+builder.Services.AddSingleton<Connection>();
+builder.Services.AddHostedService<Collector>();
+
+// Collectors
+
+builder.Services.AddSingleton<ICollector, ClientsCollector>();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseHsts();
 }
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+
+app.UsePrometheusServer();
+app.UseRouting();
+
+app.UseAuthorization();
+
+app.MapRazorPages();
+
+app.Run();
